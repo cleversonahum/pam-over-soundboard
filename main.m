@@ -14,7 +14,7 @@
 % Global Variables
 Fs=44100; %sampling frequency in Hz
 S=1000; %number of symbols per frame
-L=80; %oversampling factor
+L=2; %oversampling factor
 wc=pi/2; %carrier frequency: 0.5*pi rad (or Fs/4 Hz)
 M=2; %number of symbols in alphabet
 b=log2(M); %num of bits per symbol
@@ -29,7 +29,9 @@ tx_bitstream=temp>0.5; %bits: 0 or 1
 
 symbols = bin2pam(txBitstream, M); % Modulating bitstream to M-PAM symbols
 
-%upsampled_symbols
+upsampled_symbols = upsample(symbols, L); % Upsampling symbols in according to L
+
+downsampled_symbols = downsample(upsampled_symbols, L); % Downsampling symbols in according to L
 
 rx_bitstream = pam2bin(symbols,M); % Demodulating M-PAM symbols to bitstream
 
