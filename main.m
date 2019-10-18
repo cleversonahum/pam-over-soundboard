@@ -16,23 +16,33 @@ Fs=44100; %sampling frequency in Hz
 S=1000; %number of symbols per frame
 L=2; %oversampling factor
 wc=pi/2; %carrier frequency: 0.5*pi rad (or Fs/4 Hz)
-M=2; %number of symbols in alphabet
+M=4; %number of symbols in alphabet
 b=log2(M); %num of bits per symbol
 n_bits=b*S; %total number of bits to be transmitted
+rolloff=0.1; %roll-off factor for sqrt raised cosine
+delay_symbols=6; %delay at symbol rate
 
 %%%%%%%%%%%%%%REMOVE IT AFTER%%%%%%%%%%%%%%%%%%%%%%%
 % Generating bits to be streamed
-temp=rand(nbits,1); %random numbers ~[0,1]
+temp=rand(n_bits,1); %random numbers ~[0,1]
 tx_bitstream=temp>0.5; %bits: 0 or 1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Modulating bitstream to M-PAM symbols
+symbols = bin2pam(tx_bitstream, M);
 
-symbols = bin2pam(txBitstream, M); % Modulating bitstream to M-PAM symbols
+% Upsampling symbols in according to L
+upsampled_symbols = upsample(symbols, L);
 
-upsampled_symbols = upsample(symbols, L); % Upsampling symbols in according to L
+% Convolving the signal with the pulse shape (Raised Cosine)
+pulse_signal = pulseShape(upsampled_symbols,L,rolloff, delay_symbols);
 
-downsampled_symbols = downsample(upsampled_symbols, L); % Downsampling symbols in according to L
+signal = matchedFilter(pulse_signal, L,rolloff, delay_symbols);
 
-rx_bitstream = pam2bin(symbols,M); % Demodulating M-PAM symbols to bitstream
+% Downsampling symbols in according to L
+% downsampled_symbols = downsample(upsampled_symbols, L);
+
+% Demodulating M-PAM symbols to bitstream
+% rx_bitstream = pam2bin(symbols,M);
 
 
