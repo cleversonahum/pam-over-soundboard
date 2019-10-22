@@ -7,8 +7,8 @@ function [ sig ] = sourceDecoding( comp_sig )
     [syms, p] = imagesHuffman('images'); % Defining huffman requirements
     dict = huffmandict(syms, p); % Huffman Dictionary
     sig = huffmandeco(comp_sig, dict); % Decoding the signal
-    sig = uint8(idct2(single(sig)));
-    sig = reshape(sig, [256,256]);   
+    sig = reshape(sig, [256,256]); % Reshape signal to image dimensions
+    sig = uint8(idct2(single(sig)));  % to image domain  
 
 end
 
