@@ -14,8 +14,12 @@ function [ decoded_sig ] = channelDecoding( coded_sig, type, tblen)
         G2=5;
         trel=poly2trellis(K,[G1 G2]);
         decoded_sig=vitdec(coded_sig,trel,tblen,'trunc','hard');
+        
+    elseif(strcmp(type,'linear')) % Hamming Encoder
+        decoded_sig = decode(coded_sig,7,4,'hamming/binary');
+        
     else
-        disp('Not implemented yet');
+        disp('Choose a valid option for channel decoder');
     end
 
 
