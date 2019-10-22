@@ -14,8 +14,12 @@ function [ coded_sig ] = channelCoding( comp_sig, type )
         G2=5;
         trel=poly2trellis(K,[G1 G2]);
         coded_sig=convenc(comp_sig,trel);
+        
+    elseif(strcmp(type,'linear')) % Hamming Encoder
+        coded_sig = encode(comp_sig,7,4,'hamming/binary');
+        
     else
-        disp('Not implemented yet');
+        disp('Choose a valid option for channel encoder');
     end
 
 
