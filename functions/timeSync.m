@@ -11,10 +11,29 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, txPreamble, upFa
 %   - txPreamble: the preamble signal in symbols
     preambleSize = length(txPreamble)/upFactor;
    
+    % Find the the position that starts the preamble in each frame
     [c,lags] = xcorr(preambledSymbols,txPreamble);
     threshold = max(abs(c))*0.9;
-    framesLag = lags(find(abs(c)>threshold));
+    detectedLags = lags(find(abs(c)>threshold));
+    framesLag = zeros(length(detectedLags),1);
+    lastLag = 1;
+    j = 1;
+    for i = 1:length(detectedLags)-1
+        if (detectedLags(i+1) - detectedLags(i) > 1)
+            previousLastLag = lastLag;
+            lastLag = i;
+            lagsRange = find(lags >= detectedLags(previousLastLag + 1) & ...
+                             lags <= detectedLags(lastLag));
+            framesLag(j) = lags(find(abs(c) == max(abs(c(lagsRange)))));
+            j = j + 1;
+        end
+    end 
+    lagsRange = find(lags > detectedLags(lastLag + 1) & ...
+                     lags < detectedLags(end));
+    framesLag(j) = lags(find(abs(c) == max(abs(c(lagsRange)))));
+    framesLag = nonzeros(framesLag);
     
+    % Read the symbols from each frame
     nFrames = length(framesLag);
     symbols = zeros(frameSize*nFrames*upFactor,1);
     for i = 1:nFrames
@@ -29,6 +48,7 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, txPreamble, upFa
         end 
     end
     
+    % Downsampling the signal
     symbols = downsample(symbols, upFactor);   
     rxSymbols = nonzeros(symbols);
     
