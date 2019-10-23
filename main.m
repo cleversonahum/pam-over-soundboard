@@ -24,21 +24,21 @@ b=log2(M); %num of bits per symbol
 n_bits = 10500;
 rolloff=0.5; %roll-off factor for sqrt raised cosine
 delay_symbols=3; %delay at symbol rate
-
-%%%%%%%%%%%%%%REMOVE IT AFTER%%%%%%%%%%%%%%%%%%%%%%%
-% Generating bits to be streamed
-temp=rand(n_bits,1); %random numbers ~[0,1]
-tx_bitstream=temp>0.5; %bits: 0 or 1
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Flag to Enable Channel
-en_channel = 1;
-
+en_channel = 0; % Flag to Enable Channel
+channel_code_type = 'conv'; % 'conv' or 'linear'
+channel_code_tblen = 98192; % Needed when using Convolutional channel...
+                                % decoding, length of uncoded symbols
 
 %% Transmitter
 
+% Reading Image and Source coding functions
+comp_sig = sourceCoding('images/5.1.09.tiff');
+
+% Channel Coding
+coded_sig = channelCoding(comp_sig, channel_code_type);
+
 % Modulating bitstream to M-PAM symbols
-[symbols, power] = bin2pam(tx_bitstream, M);
+[symbols, power] = bin2pam(coded_sig, M);
 [normPreambledSymbols, txPreamble] = insertPreamble(symbols,power,S);
 
 % Upsampling symbols in according to L
@@ -90,6 +90,13 @@ rxSymbols = normRxSymbols/normalizedEnergy;
 % Demodulating M-PAM symbols to bitstream
 rx_bitstream = pam2bin(symbols,M);
 BER = berEstimation(rx_bitstream, tx_bitstream);
+
+% Channel Decoding
+decoded_sig = channelDecoding(rx_bitstream, channel_code_type,...
+                                channel_code_tblen);
+
+% Source Decoding and recovering image
+img = sourceDecoding(decoded_sig);
 
 
 
