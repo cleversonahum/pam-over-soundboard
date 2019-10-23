@@ -18,14 +18,15 @@ en_channel = 0; % Flag to Enable Channel
 channel_code_type = 'conv'; % 'conv' or 'linear'
 channel_code_tblen = 98192; % Needed when using Convolutional channel...
                                 % decoding, length of uncoded symbols
+                                
 
 %% Transmitter
 
 % Reading Image and Source coding functions
-comp_sig = sourceCoding('images/5.1.09.tiff');
+comp_tx_bitstream = sourceCoding('images/5.1.09.tiff');
 
 % Channel Coding
-coded_sig = channelCoding(comp_sig, channel_code_type);
+coded_tx_bitstream = channelCoding(comp_tx_bitstream, channel_code_type);
 
 % Modulating bitstream to M-PAM symbols
 [symbols, power] = bin2pam(coded_sig, M);
@@ -46,12 +47,13 @@ x_signal = upconversion(pulse_signal,11025, Fs);
 % Channel Taps. To see the frequency behavior from this channel run:
 % freqz(ht)
 ht = [0.2 0.9 0.3];
-SNR = 3; % in dBW
+SNR = 30; % in dBW
 
 if en_channel == 1
+    load('channel.mat');
     % Channel Model ( y = H*x + n), where H is the channel, x is the
     % transmitted signal and n is the AWGN noise
-    r_channel = conv(x_signal, ht_bandpass);
+    r_channel = conv(x_signal, htx);
     r_power = 10*log10(mean(r_channel.^2)); % in dBW
     y_signal = awgn(r_channel,SNR,r_power);
 else
@@ -73,20 +75,20 @@ rx_signal_filt = matchedFilter(rx_signal, L,rolloff, delay_symbols);
 [c,lags] = xcorr(rx_signal_filt,upsampled_txPreamble);
 plot(lags,c);
 %     threshold = max(abs(c))*0.9;
-normRxSymbols = timeSync(rx_signal_filt, S, upsampled_txPreamble,L);
-normalizedEnergy = normalizeEnergy(txPreamble, power);
-rxSymbols = normRxSymbols/normalizedEnergy;
+norm_rx_symbols = timeSync(rx_signal_filt, S, upsampled_txPreamble,L);
+normalized_energy = normalizeEnergy(txPreamble, power);
+rx_symbols = norm_rx_symbols/normalized_energy;
 
 % Demodulating M-PAM symbols to bitstream
-rx_bitstream = pam2bin(symbols,M);
-BER = berEstimation(rx_bitstream, tx_bitstream);
+rx_bitstream = pam2bin(rx_symbols,M);
+BER = berEstimation(rx_bitstream, coded_tx_bitstream);
 
 % Channel Decoding
-decoded_sig = channelDecoding(rx_bitstream, channel_code_type,...
+decoded_rx_bitstream = channelDecoding(rx_bitstream, channel_code_type,...
                                 channel_code_tblen);
 
 % Source Decoding and recovering image
-img = sourceDecoding(decoded_sig);
+img = sourceDecoding(decoded_rx_bitstream);
 
 
 
