@@ -3,6 +3,7 @@ function [ decoded_sig ] = channelDecoding( coded_sig, type, tblen)
     %
     % coded_sig: output from channel coding
     % type: 'conv' or 'linear'
+    % tblen: Lenght of uncoded bitstream
     
     if nargin < 2
         type = 'conv'; %default type
