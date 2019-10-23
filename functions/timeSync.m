@@ -19,18 +19,20 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, txPreamble, upFa
     lastLag = 1;
     j = 1;
     for i = 1:length(detectedLags)-1
-        if (detectedLags(i+1) - detectedLags(i) > 1)
+        if (detectedLags(i+1) - detectedLags(i) > frameSize*upFactor)
             previousLastLag = lastLag;
             lastLag = i;
             lagsRange = find(lags >= detectedLags(previousLastLag + 1) & ...
                              lags <= detectedLags(lastLag));
-            framesLag(j) = lags(find(abs(c) == max(abs(c(lagsRange)))));
+            framesLag(j) = lags(find(abs(c(lagsRange)) == ...
+                                max(abs(c(lagsRange))))+lagsRange(1)-1);
             j = j + 1;
         end
     end 
     lagsRange = find(lags > detectedLags(lastLag + 1) & ...
                      lags < detectedLags(end));
-    framesLag(j) = lags(find(abs(c) == max(abs(c(lagsRange)))));
+    framesLag(j) = lags(find(abs(c(lagsRange)) == ...
+                        max(abs(c(lagsRange))))+lagsRange(1)-1);
     framesLag = nonzeros(framesLag);
     
     % Read the symbols from each frame
