@@ -37,7 +37,8 @@ function [ preambledSignal, txPreamble ] = insertPreamble( signal, ...
         else
             preambledSignal(frameInit(i):frameFinal(i)) = [txPreamble normSignal((1+(i-1)*frameSize):end)];            
         end
-    end 
+    end
+    preambledSignal = [preambledSignal txPreamble];
     
 
 end

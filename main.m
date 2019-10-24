@@ -64,17 +64,15 @@ end
 %% Receiver
 
 %Downconversion
-rx_signal = upconversion(y_signal,11025, Fs);
+rx_signal = downconversion(1.5*y_signal,11025, Fs);
 
 %Matched Filter
 rx_signal_filt = matchedFilter(rx_signal, L,rolloff, delay_symbols);
-
 
 % Symbol synchronization on the receiver side
 % Furthemore, this function implements the downsampling to Rsym
 [c,lags] = xcorr(rx_signal_filt,upsampled_txPreamble);
 plot(lags,c);
-%     threshold = max(abs(c))*0.9;
 norm_rx_symbols = timeSync(rx_signal_filt, S, upsampled_txPreamble,L);
 normalized_energy = normalizeEnergy(txPreamble, power);
 rx_symbols = norm_rx_symbols/normalized_energy;
@@ -85,7 +83,7 @@ BER = berEstimation(rx_bitstream, coded_tx_bitstream);
 
 % Channel Decoding
 decoded_rx_bitstream = channelDecoding(rx_bitstream, channel_code_type,...
-                                channel_code_tblen);
+                                       channel_code_tblen);
 
 % Source Decoding and recovering image
 img = sourceDecoding(decoded_rx_bitstream);

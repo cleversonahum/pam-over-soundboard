@@ -16,7 +16,7 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
    
     % Find the the position that starts the preamble in each frame
     [c,lags] = xcorr(preambledSymbols,txPreamble);
-    threshold = max(abs(c))*0.9;
+    threshold = max(abs(c))*0.8;
     detectedLags = lags(find(abs(c)>threshold));
     framesLag = zeros(length(detectedLags),1);
     lastLag = 1;
@@ -36,21 +36,35 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
                                 max(abs(c(lagsRange))))+lagsRange(1)-1);
             j = j + 1;
         end
-    end 
-    lagsRange = find(lags >= detectedLags(lastLag + 1) & ...
+    end
+
+   for i = (lastLag+1):length(detectedLags)-1
+       if (detectedLags(i+1) - detectedLags(i) > (preambleSize +1)*upFactor)
+            previousLastLag = i;
+            lagsRange = find(lags >= detectedLags(lastLag + 1) & ...
+                             lags <= detectedLags(previousLastLag));
+            framesLag(j) = lags(find(abs(c(lagsRange)) == ...
+                                max(abs(c(lagsRange))))+lagsRange(1)-1);
+            j = j + 1;
+       end
+   end
+    lagsRange = find(lags >= detectedLags(previousLastLag + 1) & ...
                      lags <= detectedLags(end));
     framesLag(j) = lags(find(abs(c(lagsRange)) == ...
                         max(abs(c(lagsRange))))+lagsRange(1)-1);
     framesLag = [ framesLag(1:j-1)' nonzeros(framesLag(j:end))];
     
     % Read the symbols from each frame
-    nFrames = length(framesLag);
+    nFrames = length(framesLag)-1;
     symbols = zeros(frameSize*nFrames*upFactor,1);
     for i = 1:nFrames
         if (i == nFrames)
-            final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end-2*mf_delay*upFactor)));
+            final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(framesLag(end)-1)));
+%             final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end)));
             symbols((1+(i-1)*frameSize*upFactor):((i-1)*frameSize*upFactor + final)) = ...
-            preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end-2*mf_delay*upFactor));
+            preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(framesLag(end)-1));
+%             preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end));
+
         else
             symbols((1+(i-1)*frameSize*upFactor):(i*(frameSize)*upFactor+1-upFactor)) = ...
             preambledSymbols(framesLag(i)+1+upFactor*preambleSize:...
