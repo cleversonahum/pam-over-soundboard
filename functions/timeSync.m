@@ -1,5 +1,5 @@
-function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
-                                   txPreamble, upFactor, mf_delay)
+function [ rxSymbols, nFrames ] = timeSync( preambledSymbols, frameSize, ...
+                                            txPreamble, upFactor)
 %timeSync Summary of this function:
 %   Goal: Given the number of samples per frame, this function synchronizes
 %   in time the received signal
@@ -8,7 +8,6 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
 %   - txPreamble: the preambles transmitted by the transmitter.
 %   - frameSize: how much samples to each frame.
 %   - upFactor: the oversampling factor from the preambledSymbols.
-%   - mf_delay: the delay in symbols that the matched filter adds.
 %   Output:
 %   - preambledSignal: the normalized signal with a preamble in each frame.
 %   - txPreamble: the preamble signal in symbols
@@ -37,17 +36,7 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
             j = j + 1;
         end
     end
-
-   for i = (lastLag+1):length(detectedLags)-1
-       if (detectedLags(i+1) - detectedLags(i) > (preambleSize +1)*upFactor)
-            previousLastLag = i;
-            lagsRange = find(lags >= detectedLags(lastLag + 1) & ...
-                             lags <= detectedLags(previousLastLag));
-            framesLag(j) = lags(find(abs(c(lagsRange)) == ...
-                                max(abs(c(lagsRange))))+lagsRange(1)-1);
-            j = j + 1;
-       end
-   end
+    previousLastLag = lastLag;
     lagsRange = find(lags >= detectedLags(previousLastLag + 1) & ...
                      lags <= detectedLags(end));
     framesLag(j) = lags(find(abs(c(lagsRange)) == ...
@@ -55,14 +44,14 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
     framesLag = [ framesLag(1:j-1)' nonzeros(framesLag(j:end))];
     
     % Read the symbols from each frame
-    nFrames = length(framesLag)-1;
-    symbols = zeros(frameSize*nFrames*upFactor,1);
+    nFrames = length(framesLag);
+    symbols = zeros((frameSize+preambleSize)*nFrames*upFactor,1);
     for i = 1:nFrames
         if (i == nFrames)
-            final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(framesLag(end)-1)));
+            final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):end));
 %             final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end)));
             symbols((1+(i-1)*frameSize*upFactor):((i-1)*frameSize*upFactor + final)) = ...
-            preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(framesLag(end)-1));
+            preambledSymbols((framesLag(i)+1+upFactor*preambleSize):end);
 %             preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end));
 
         else
@@ -73,8 +62,8 @@ function [ rxSymbols ] = timeSync( preambledSymbols, frameSize, ...
     end
     
     % Downsampling the signal
-    symbols = downsample(symbols, upFactor);   
-    rxSymbols = nonzeros(symbols);
+    symbols2 = downsample(symbols, upFactor);
+    rxSymbols = nonzeros(symbols2);
     
 
 
