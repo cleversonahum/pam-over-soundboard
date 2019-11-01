@@ -1,5 +1,7 @@
-function [ rxSymbols, nFrames ] = timeSync( preambledSymbols, frameSize, ...
-                                            txPreamble, upFactor)
+function [ rxSymbols, nFrames, preambleMatrix ] = timeSync(preambledSymbols, ...
+                                                            frameSize, ...
+                                                            txPreamble, ...
+                                                            upFactor)
 %timeSync Summary of this function:
 %   Goal: Given the number of samples per frame, this function synchronizes
 %   in time the received signal
@@ -11,6 +13,8 @@ function [ rxSymbols, nFrames ] = timeSync( preambledSymbols, frameSize, ...
 %   Output:
 %   - preambledSignal: the normalized signal with a preamble in each frame.
 %   - txPreamble: the preamble signal in symbols
+%   - preambleMatrix: The matrix with all the received preambles in the
+%   receiver. Obs: This preambled is upsampled yet.
     preambleSize = length(txPreamble)/upFactor;
    
     % Find the the position that starts the preamble in each frame
@@ -46,6 +50,7 @@ function [ rxSymbols, nFrames ] = timeSync( preambledSymbols, frameSize, ...
     % Read the symbols from each frame
     nFrames = length(framesLag);
     symbols = zeros((frameSize+preambleSize)*nFrames*upFactor,1);
+    preambleMatrix = zeros(nFrames, preambleSize);
     for i = 1:nFrames
         if (i == nFrames)
             final = length(preambledSymbols((framesLag(i)+1+upFactor*preambleSize):end));
@@ -53,12 +58,14 @@ function [ rxSymbols, nFrames ] = timeSync( preambledSymbols, frameSize, ...
             symbols((1+(i-1)*frameSize*upFactor):((i-1)*frameSize*upFactor + final)) = ...
             preambledSymbols((framesLag(i)+1+upFactor*preambleSize):end);
 %             preambledSymbols((framesLag(i)+1+upFactor*preambleSize):(end));
-
         else
             symbols((1+(i-1)*frameSize*upFactor):(i*(frameSize)*upFactor+1-upFactor)) = ...
             preambledSymbols(framesLag(i)+1+upFactor*preambleSize:...
                              (framesLag(i)+1+upFactor*preambleSize+upFactor*(frameSize-1)));
+
         end 
+        preambleMatrix(i,1:preambleSize) = ...
+            preambledSymbols(framesLag(i):upFactor:framesLag(i)+upFactor*preambleSize-1);
     end
     
     % Downsampling the signal
