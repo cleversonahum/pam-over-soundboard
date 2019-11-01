@@ -14,15 +14,20 @@ function [ preambledSignal, txPreamble ] = insertPreamble( signal, ...
     lenSignal = length(signal);
     %Barker Code for Preamble:
     %URL: https://en.wikipedia.org/wiki/Barker_code
+    nFrames = ceil(length(signal)/frameSize);
     txPreamble = [+1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
                   +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
                   +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
                   +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
                   +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1];
-    normalizedEnergy = normalizeEnergy(txPreamble, powerSignal);
-    normSignal = normalizedEnergy*signal;
+    powerPreamble = mean(abs(txPreamble).^2);
+    normalizedEnergy = normalizeEnergy(powerPreamble, powerSignal);
+    txPreambleNorm = sqrt(normalizedEnergy)*txPreamble;
+    zeroPaddingSymbols = zeros(1,nFrames*frameSize - length(signal));
+    signal = [signal zeroPaddingSymbols];
+    normSignal = signal;
     preambleSize = length(txPreamble);
-    nFrames = ceil(length(signal)/frameSize);
+
     preambledSignal = zeros(1,nFrames*length(txPreamble) + length(signal));
     frameInit = 1:(frameSize + length(txPreamble)):length(preambledSignal);
     frameFinal = (preambleSize + frameSize):(preambleSize + frameSize):length(preambledSignal);
@@ -33,11 +38,13 @@ function [ preambledSignal, txPreamble ] = insertPreamble( signal, ...
     
     for i= 1:nFrames
         if(i < floor(lenSignal/frameSize + 1))
-            preambledSignal(frameInit(i):frameFinal(i)) = [txPreamble normSignal((1+(i-1)*frameSize):(i*frameSize))];
+            preambledSignal(frameInit(i):frameFinal(i)) = ...
+                [txPreambleNorm normSignal((1+(i-1)*frameSize):(i*frameSize))];
         else
-            preambledSignal(frameInit(i):frameFinal(i)) = [txPreamble normSignal((1+(i-1)*frameSize):end)];            
+            preambledSignal(frameInit(i):frameFinal(i)) = ...
+                [txPreambleNorm normSignal((1+(i-1)*frameSize):end)];
         end
-    end 
+    end
     
 
 end
