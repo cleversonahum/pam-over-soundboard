@@ -99,7 +99,7 @@ for j = 1:matrixLength(1)
 end
 
 % Demodulating M-PAM symbols to cbitstream
-[rx_bitstream, rx_demod_ind ] = pam2bin(rx_symbols,M);
+rx_bitstream = pam2bin(rx_symbols,M);
 
 % Channel Decoding
 channel_code_tblen = n_frames*S;
