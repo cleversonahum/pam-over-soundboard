@@ -5,6 +5,7 @@ addpath('functions');
 
 %% Global Variables
 Fs=44100; %sampling frequency in Hz
+Fc=4410; % carrier frequency in Hz
 S=1000; %number of symbols per frame
 L=20; %oversampling factor
 wc=pi/2; %carrier frequency: 0.5*pi rad (or Fs/4 Hz)
@@ -14,20 +15,21 @@ b=log2(M); %num of bits per symbol
 n_bits = 10500;
 rolloff=0.5; %roll-off factor for sqrt raised cosine
 delay_symbols=3; %delay at symbol rate
-en_channel = 0; % Flag to Enable Channel
+en_channel = 1; % Flag to Enable Channel
 channel_code_type = 'conv'; % 'conv' or 'linear'
 
 %%%%%%%%%%%%%%REMOVE IT AFTER%%%%%%%%%%%%%%%%%%%%%%%
 % Generating bits to be streamed
 temp=rand(n_bits,1); %random numbers ~[0,1]
-tx_bitstream=temp>0.5; %bits: 0 or 1
+bitstream=temp>0.5; %bits: 0 or 1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                 
 
 %% Transmitter
 
 % Reading Image and Source coding functions
-comp_tx_bitstream = sourceCoding('images/5.1.09.tiff');
+comp_tx_bitstream = sourceCoding('images/5.1.10.tiff');
+% comp_tx_bitstream = bitstream;
 
 %Add zeroPadding in the last frame
 temp=rand(ceil(length(comp_tx_bitstream)/(log2(M)*S))*log2(M)*S - ...
@@ -52,7 +54,8 @@ pulse_signal = pulseShape(upsampled_symbols,L,rolloff, delay_symbols);
 
 %Upconversion to 0.5*pi or 11.025 kHz
 % x_signal = upconversion(sqrt(2)*pulse_signal,4410, Fs);
-x_signal = pulse_signal;
+x_signal = upconversion(pulse_signal,4410, Fs);
+% x_signal = pulse_signal;
 
 %% Channel
 
@@ -76,8 +79,8 @@ end
 %% Receiver
 
 %Downconversion
-% rx_signal = downconversion(y_signal,4410, Fs);
-rx_signal = y_signal;
+rx_signal = downconversion(y_signal,4410, Fs);
+% rx_signal = y_signal;
 
 %Matched Filter
 rx_signal_filt = matchedFilter(rx_signal, L,rolloff, delay_symbols);
@@ -86,10 +89,17 @@ rx_signal_filt = matchedFilter(rx_signal, L,rolloff, delay_symbols);
 % Furthemore, this function implements the downsampling to Rsym
 [c,lags] = xcorr(rx_signal_filt,upsampled_txPreamble);
 plot(lags,c);
-[rx_symbols, n_frames] = timeSync(rx_signal_filt, S, upsampled_txPreamble,L);
+[rx_symbols, n_frames, rx_up_preamble] = timeSync(rx_signal_filt, S, ...
+                                                  upsampled_txPreamble,L);
+
+matrixLength = size(rx_up_preamble);
+for j = 1:matrixLength(1)
+    gain_adjustment = mean(rx_up_preamble(j,1:end)./(2.2361*txPreamble));
+    rx_symbols((j-1)*S+1:S*j) = rx_symbols((j-1)*S+1:S*j)/gain_adjustment;
+end
 
 % Demodulating M-PAM symbols to cbitstream
-[rx_bitstream, rx_demod_ind ] = pam2bin(rx_symbols,M);
+rx_bitstream = pam2bin(rx_symbols,M);
 
 % Channel Decoding
 channel_code_tblen = n_frames*S;
@@ -100,7 +110,7 @@ BER = berEstimation(decoded_rx_bitstream, tx_bitstream);
 
 
 % Source Decoding and recovering image
-img = sourceDecoding(decoded_rx_bitstream);
+img = sourceDecoding(decoded_rx_bitstream(1:length(comp_tx_bitstream)));
 
 
 

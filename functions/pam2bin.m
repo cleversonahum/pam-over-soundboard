@@ -1,4 +1,4 @@
-function [ bitstream ] = pam2bin( symbols, M )
+function [ bitstream] = pam2bin( symbols, M )
     % Function which takes a vector in M-PAM representation and convert 
     % them to a vector with binary representation
     %
