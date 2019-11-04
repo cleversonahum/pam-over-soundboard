@@ -115,7 +115,7 @@ img = sourceDecoding(decoded_rx_bitstream(1:length(comp_tx_bitstream)));
 
 % Calculating PSNR
 ori_img = imread(img_name);
-psnr_value = psnr(img, ori_img);
+psnr_value = psnr(double(img), double(ori_img));
 
 
 
