@@ -55,7 +55,7 @@ pulse_signal = pulseShape(upsampled_symbols,L,rolloff, delay_symbols);
 
 %Upconversion to 0.5*pi or 11.025 kHz
 % x_signal = upconversion(sqrt(2)*pulse_signal,4410, Fs);
-x_signal = upconversion(pulse_signal,4410, Fs);
+x_signal = upconversion(pulse_signal,Fc, Fs);
 % x_signal = pulse_signal;
 
 %% Channel
