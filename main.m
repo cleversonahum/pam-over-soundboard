@@ -17,6 +17,7 @@ rolloff=0.5; %roll-off factor for sqrt raised cosine
 delay_symbols=3; %delay at symbol rate
 en_channel = 1; % Flag to Enable Channel
 channel_code_type = 'conv'; % 'conv' or 'linear'
+img_name = 'images/5.1.10.tiff';
 
 %%%%%%%%%%%%%%REMOVE IT AFTER%%%%%%%%%%%%%%%%%%%%%%%
 % Generating bits to be streamed
@@ -28,7 +29,7 @@ bitstream=temp>0.5; %bits: 0 or 1
 %% Transmitter
 
 % Reading Image and Source coding functions
-comp_tx_bitstream = sourceCoding('images/5.1.10.tiff');
+comp_tx_bitstream = sourceCoding(img_name);
 % comp_tx_bitstream = bitstream;
 
 %Add zeroPadding in the last frame
@@ -111,6 +112,10 @@ BER = berEstimation(decoded_rx_bitstream, tx_bitstream);
 
 % Source Decoding and recovering image
 img = sourceDecoding(decoded_rx_bitstream(1:length(comp_tx_bitstream)));
+
+% Calculating PSNR
+ori_img = imread(img_name);
+psnr_value = psnr(img, ori_img);
 
 
 
