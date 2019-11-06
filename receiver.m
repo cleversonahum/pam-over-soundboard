@@ -35,6 +35,12 @@ rx_signal_filt = matchedFilter(rx_signal, L,rolloff, delay_symbols);
 
 % Symbol synchronization on the receiver side
 % Furthemore, this function implements the downsampling to Rsym
+txPreamble = [+1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
+                  +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
+                  +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
+                  +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1 ...
+                  +1 +1 +1 +1 +1 -1 -1 +1 +1 -1 +1 -1 +1];
+upsampled_txPreamble = upsample(txPreamble, L);
 [c,lags] = xcorr(rx_signal_filt,upsampled_txPreamble);
 plot(lags,c);
 [rx_symbols, n_frames, rx_up_preamble] = timeSync(rx_signal_filt, S, ...
@@ -54,11 +60,11 @@ channel_code_tblen = n_frames*S;
 decoded_rx_bitstream = channelDecoding(rx_bitstream(1:n_frames*S*log2(M)),...
                                        channel_code_type,...
                                        channel_code_tblen);
-BER = berEstimation(decoded_rx_bitstream, tx_bitstream);
+%BER = berEstimation(decoded_rx_bitstream, tx_bitstream);
 
 
 % Source Decoding and recovering image
-img = sourceDecoding(decoded_rx_bitstream(1:length(comp_tx_bitstream)));
+img = sourceDecoding(decoded_rx_bitstream(1:170036));
 
 % Calculating PSNR
 ori_img = imread(img_name);
