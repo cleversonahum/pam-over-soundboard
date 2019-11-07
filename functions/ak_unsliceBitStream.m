@@ -5,7 +5,7 @@ function bitStream = ak_unsliceBitStream(chunks, b)
 %  b -> number of bits to be used in each output chunk
 %output:
 %  bitStream -> input bits (0 or 1) as a column vector
-bits=dec2bin(chunks,b); %convert to bits
+bits=dec2bin(real(chunks),b); %convert to bits
 %prepare to concatenate along columns via command bits(:)
 bits=transpose(bits); 
 bitStream=bits(:); %generate one column vector
